@@ -1,11 +1,11 @@
-package model
+package courier
 
 import (
 	"errors"
 
 	"github.com/google/uuid"
 
-	domainmodel "delivery/internal/core/domain/model"
+	"delivery/internal/core/domain/model"
 	"delivery/internal/pkg/ddd"
 )
 
@@ -13,17 +13,18 @@ var (
 	ErrVolumeIsZero               = errors.New("volume should not be 0")
 	ErrInvalidOrderID             = errors.New("orderID should not be empty")
 	ErrAssignmentAlreadyCompleted = errors.New("assignment already completed")
+	ErrCourierTooFar              = errors.New("courier is too far from order location")
 )
 
 type Assignment struct {
 	baseEntity ddd.BaseEntity[uuid.UUID]
 	orderId    uuid.UUID
-	volume     domainmodel.Volume
-	location   domainmodel.Location
+	volume     model.Volume
+	location   model.Location
 	status     AssignmentStatus
 }
 
-func NewAssignment(orderID uuid.UUID, volume domainmodel.Volume, location domainmodel.Location) (*Assignment, error) {
+func NewAssignment(orderID uuid.UUID, volume model.Volume, location model.Location) (*Assignment, error) {
 	if orderID == uuid.Nil {
 		return nil, ErrInvalidOrderID
 	}
@@ -48,11 +49,11 @@ func (a *Assignment) OrderID() uuid.UUID {
 	return a.orderId
 }
 
-func (a *Assignment) Volume() domainmodel.Volume {
+func (a *Assignment) Volume() model.Volume {
 	return a.volume
 }
 
-func (a *Assignment) Location() domainmodel.Location {
+func (a *Assignment) Location() model.Location {
 	return a.location
 }
 
@@ -60,9 +61,12 @@ func (a *Assignment) Status() AssignmentStatus {
 	return a.status
 }
 
-func (a *Assignment) Complete() error {
+func (a *Assignment) Complete(courierLocation model.Location) error {
 	if a.status.Equals(statusCompleted) {
 		return ErrAssignmentAlreadyCompleted
+	}
+	if courierLocation.DistanceTo(a.location) > 1 {
+		return ErrCourierTooFar
 	}
 	a.status = statusCompleted
 	return nil

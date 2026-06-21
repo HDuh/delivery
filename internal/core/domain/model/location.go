@@ -38,6 +38,8 @@ func NewLocation(x uint8, y uint8) (Location, error) {
 	}, nil
 }
 
+func (l Location) IsZero() bool { return l.xCoord == 0 && l.yCoord == 0 }
+
 func (l Location) Equal(other Location) bool {
 	return l.xCoord == other.xCoord && l.yCoord == other.yCoord
 }
